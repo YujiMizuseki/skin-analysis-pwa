@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skin-ai-v8';
+const CACHE_NAME = 'skin-ai-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './js/faceDetector.js',
   './js/analyzers/nasolabialAnalyzer.js',
   './js/analyzers/marionetteAnalyzer.js',
+  './js/analyzers/chinSagAnalyzer.js',
   './js/analyzers/cheekAnalyzer.js',
   './js/analyzers/boneStructureAnalyzer.js',
   './js/analyzers/wrinkleAnalyzer.js',

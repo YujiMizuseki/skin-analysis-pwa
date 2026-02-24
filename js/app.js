@@ -9,15 +9,17 @@ const App = (() => {
   let captureInProgress = false;
 
   const STEPS = [
-    { id: 'neutral', emoji: '😐', title: '正面・無表情',
-      desc: 'カメラを顔の正面に向け、<br>無表情のまま静止してください' },
-    { id: 'smile',   emoji: '😊', title: '正面・笑顔',
-      desc: '正面を向いたまま、<br>自然な笑顔を作ってください' },
-    { id: 'down',    emoji: '😶', title: '少し下向き',
-      desc: 'あごをやや引いて下向きに。<br>重力によるたるみを確認します' },
+    { id: 'neutral', emoji: '\ud83d\ude10', title: '\u6b63\u9762\u30fb\u7121\u8868\u60c5',
+      desc: '\u30ab\u30e1\u30e9\u3092\u9854\u306e\u6b63\u9762\u306b\u5411\u3051\u3001<br>\u7121\u8868\u60c5\u306e\u307e\u307e\u9759\u6b62\u3057\u3066\u304f\u3060\u3055\u3044' },
+    { id: 'smile',   emoji: '\ud83d\ude0a', title: '\u6b63\u9762\u30fb\u7b11\u9854',
+      desc: '\u6b63\u9762\u3092\u5411\u3044\u305f\u307e\u307e\u3001<br>\u81ea\u7136\u306a\u7b11\u9854\u3092\u4f5c\u3063\u3066\u304f\u3060\u3055\u3044' },
+    { id: 'bottom',  emoji: '\ud83d\udcf1', title: '\u771f\u4e0b\u304b\u3089\u64ae\u5f71',
+      desc: '\u30b9\u30de\u30db\u3092\u984e\u306e\u4e0b\u306b\u7f6e\u3044\u3066<br>\u4e0a\u306b\u5411\u3051\u3066\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044' },
+    { id: 'top',     emoji: '\ud83d\ude46', title: '\u771f\u4e0a\u304b\u3089\u64ae\u5f71',
+      desc: '\u30b9\u30de\u30db\u3092\u982d\u306e\u4e0a\u306b\u639b\u3052<br>\u4e0b\u5411\u304d\u306b\u3057\u3066\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044' },
   ];
 
-  // ─── Screen management ───────────────────────────────────────
+  // \u2500\u2500\u2500 Screen management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('screen-' + id);
@@ -25,9 +27,9 @@ const App = (() => {
   }
 
   function showModal(text, sub) {
-    document.getElementById('modal-text').textContent = text || 'AIモデルを読み込み中...';
+    document.getElementById('modal-text').textContent = text || 'AI\u30e2\u30c7\u30eb\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...';
     const subEl = document.querySelector('.modal-sub');
-    if (subEl) subEl.textContent = sub || '初回は30秒ほどかかります';
+    if (subEl) subEl.textContent = sub || '\u521d\u56de\u306f30\u79d2\u307b\u3069\u304b\u304b\u308a\u307e\u3059';
     document.getElementById('modal-loading').classList.remove('hidden');
   }
 
@@ -36,23 +38,24 @@ const App = (() => {
   }
 
   function showError(title, msg) {
-    document.getElementById('error-title').textContent = title || 'エラー';
-    document.getElementById('error-msg').textContent   = msg   || '不明なエラーが発生しました。';
+    document.getElementById('error-title').textContent = title || '\u30a8\u30e9\u30fc';
+    document.getElementById('error-msg').textContent   = msg   || '\u4e0d\u660e\u306a\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f\u3002';
     document.getElementById('modal-loading').classList.add('hidden');
     document.getElementById('modal-error').classList.remove('hidden');
   }
 
-  // ─── Step UI ─────────────────────────────────────────────────
+  // \u2500\u2500\u2500 Step UI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   function updateStepUI(step) {
     const s = STEPS[step];
     document.getElementById('pose-emoji').textContent   = s.emoji;
     document.getElementById('step-title').textContent   = s.title;
     document.getElementById('step-desc').innerHTML      = s.desc;
-    document.getElementById('step-label').textContent   = `${step + 1} / 3`;
+    document.getElementById('step-label').textContent   = `${step + 1} / 4`;
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       const node = document.getElementById(`node-${i}`);
       const line = document.getElementById(`line-${i}`);
+      if (!node) continue;
       node.classList.remove('active', 'done');
       if (i < step) node.classList.add('done');
       else if (i === step) node.classList.add('active');
@@ -61,10 +64,10 @@ const App = (() => {
 
     const btn = document.getElementById('btn-capture');
     btn.disabled = true;
-    document.getElementById('capture-hint').textContent = '顔を枠内に合わせてください';
+    document.getElementById('capture-hint').textContent = '\u9854\u3092\u67a0\u5185\u306b\u5408\u308f\u305b\u3066\u304f\u3060\u3055\u3044';
   }
 
-  // ─── Enable capture button ────────────────────────────────────
+  // \u2500\u2500\u2500 Enable capture button \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   function enableCapture(hint) {
     if (captureInProgress) return;
     const btn  = document.getElementById('btn-capture');
@@ -81,23 +84,23 @@ const App = (() => {
     if (hint && htEl) htEl.textContent = hint;
   }
 
-  // ─── Live face detection callback ────────────────────────────
+  // \u2500\u2500\u2500 Live face detection callback \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   function onLiveFace(kp) {
     if (kp && kp.fallback) {
       fallbackMode = true;
-      enableCapture('⚠ 顔未検出でも撮影できます（精度低下）');
+      enableCapture('\u26a0 \u9854\u672a\u691c\u51fa\u3067\u3082\u64ae\u5f71\u3067\u304d\u307e\u3059\uff08\u7cbe\u5ea6\u4f4e\u4e0b\uff09');
       return;
     }
     if (FaceDetector.isFaceGood(kp)) {
       fallbackMode = true;
       const posHint = FaceDetector.getFaceHint ? FaceDetector.getFaceHint(kp) : null;
-      enableCapture(posHint ? `⚠ ${posHint} — 撮影可` : '✓ 準備完了！ボタンを押して撮影');
+      enableCapture(posHint ? `\u26a0 ${posHint} \u2014 \u64ae\u5f71\u53ef` : '\u2713 \u6e96\u5099\u5b8c\u4e86\uff01\u30dc\u30bf\u30f3\u3092\u62bc\u3057\u3066\u64ae\u5f71');
     } else {
-      disableCapture('顔を枠内に合わせてください');
+      disableCapture('\u9854\u3092\u67a0\u5185\u306b\u5408\u308f\u305b\u3066\u304f\u3060\u3055\u3044');
     }
   }
 
-  // ─── Capture one photo ───────────────────────────────────────
+  // \u2500\u2500\u2500 Capture one photo \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   async function capturePhoto() {
     if (captureInProgress) return;
     captureInProgress = true;
@@ -110,7 +113,7 @@ const App = (() => {
       try { kp = await FaceDetector.detectFace(canvas); } catch(e) {}
       captures.push({ canvas, landmarks: kp || null });
 
-      const thumbIdx = currentStep < 2 ? currentStep : 1;
+      const thumbIdx = currentStep % 2;
       const slot = document.getElementById(`thumb-${thumbIdx}`);
       if (slot) {
         const img = document.createElement('img');
@@ -124,11 +127,11 @@ const App = (() => {
       currentStep++;
       captureInProgress = false;
 
-      if (currentStep < 3) {
+      if (currentStep < 4) {
         fallbackMode = false;
         updateStepUI(currentStep);
         setTimeout(() => {
-          if (!captureInProgress) { fallbackMode = true; enableCapture('撮影ボタンを押してください'); }
+          if (!captureInProgress) { fallbackMode = true; enableCapture('\u64ae\u5f71\u30dc\u30bf\u30f3\u3092\u62bc\u3057\u3066\u304f\u3060\u3055\u3044'); }
         }, 600);
       } else {
         Camera.stop();
@@ -136,12 +139,12 @@ const App = (() => {
       }
     } catch (err) {
       captureInProgress = false;
-      showError('撮影エラー', err.message);
+      showError('\u64ae\u5f71\u30a8\u30e9\u30fc', err.message);
       btn.disabled = false;
     }
   }
 
-  // ─── Analysis pipeline ───────────────────────────────────────
+  // \u2500\u2500\u2500 Analysis pipeline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   async function runAnalysis() {
     showScreen('processing');
 
@@ -149,9 +152,9 @@ const App = (() => {
       const el = document.getElementById(id);
       if (!el) return;
       el.classList.remove('active', 'done'); el.classList.add(state);
-      const txt = el.textContent.replace(/^[⬜🔄✅]\s/, '');
-      if (state === 'active') el.textContent = '🔄 ' + txt;
-      if (state === 'done')   el.textContent = '✅ ' + txt;
+      const txt = el.textContent.replace(/^[\u2b1c\ud83d\udd04\u2705]\s/, '');
+      if (state === 'active') el.textContent = '\ud83d\udd04 ' + txt;
+      if (state === 'done')   el.textContent = '\u2705 ' + txt;
     };
     const setProgress = pct => {
       document.getElementById('progress-fill').style.width = pct + '%';
@@ -163,62 +166,69 @@ const App = (() => {
 
       setLog('log-detect', 'active');
       await sleep(300);
-      const [c0, c1, c2] = captures;
-      const neutralKP = c0?.landmarks || null;
-      const smileKP   = c1?.landmarks || null;
-      const downKP    = c2?.landmarks || null;
-      setLog('log-detect', 'done'); setProgress(25);
+      const [c0, c1, c2, c3] = captures;
+      const neutralKP  = c0?.landmarks || null;
+      const smileKP    = c1?.landmarks || null;
+      const bottomKP   = c2?.landmarks || null;  // \u771f\u4e0b\u304b\u3089\u64ae\u5f71
+      const topKP      = c3?.landmarks || null;  // \u771f\u4e0a\u304b\u3089\u64ae\u5f71\uff08\u6539\u5584\u30a4\u30e1\u30fc\u30b8\uff09
+      const topImgUrl  = c3?.canvas ? c3.canvas.toDataURL('image/jpeg', 0.85) : null;
+      setLog('log-detect', 'done'); setProgress(22);
 
       setLog('log-nasolabial', 'active');
       const nasolabial = NasolabialAnalyzer.analyze(neutralKP);
       await sleep(250);
-      setLog('log-nasolabial', 'done'); setProgress(38);
+      setLog('log-nasolabial', 'done'); setProgress(35);
 
       setLog('log-marionette', 'active');
-      const marionette = MarionetteAnalyzer.analyze(neutralKP, downKP);
+      const marionette = MarionetteAnalyzer.analyze(neutralKP, bottomKP);
       await sleep(250);
-      setLog('log-marionette', 'done'); setProgress(50);
+      setLog('log-marionette', 'done'); setProgress(47);
 
       setLog('log-cheek', 'active');
-      const cheek = CheekAnalyzer.analyze(neutralKP, smileKP, downKP);
+      const cheek = CheekAnalyzer.analyze(neutralKP, smileKP, bottomKP);
       await sleep(250);
-      setLog('log-cheek', 'done'); setProgress(63);
+      setLog('log-cheek', 'done'); setProgress(58);
 
       setLog('log-wrinkle', 'active');
       const wrinkle = WrinkleAnalyzer.analyze(neutralKP, smileKP);
       await sleep(250);
-      setLog('log-wrinkle', 'done'); setProgress(76);
+      setLog('log-wrinkle', 'done'); setProgress(68);
 
       setLog('log-bone', 'active');
-      const bone = BoneStructureAnalyzer.analyze(neutralKP, smileKP, downKP);
+      const bone = BoneStructureAnalyzer.analyze(neutralKP, smileKP, bottomKP);
       await sleep(250);
-      setLog('log-bone', 'done'); setProgress(88);
+      setLog('log-bone', 'done'); setProgress(78);
+
+      setLog('log-chin', 'active');
+      const chin = ChinSagAnalyzer.analyze(neutralKP, bottomKP);
+      await sleep(250);
+      setLog('log-chin', 'done'); setProgress(88);
 
       setLog('log-score', 'active');
-      const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone, marionette);
+      const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone, marionette, chin);
       await sleep(400);
       setLog('log-score', 'done'); setProgress(100);
 
       await sleep(500);
-      showResults(result);
+      showResults(result, topImgUrl);
 
     } catch (err) {
-      showError('解析エラー', '解析中にエラーが発生しました: ' + err.message);
+      showError('\u89e3\u6790\u30a8\u30e9\u30fc', '\u89e3\u6790\u4e2d\u306b\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f: ' + err.message);
     }
   }
 
-  function showResults(result) {
-    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result);
+  function showResults(result, topImgUrl) {
+    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result, topImgUrl);
     showScreen('results');
   }
 
   function shareResults() {
     if (navigator.share) {
-      navigator.share({ title: '肌診断AI 診断結果', url: window.location.href }).catch(() => {});
+      navigator.share({ title: '\u808c\u8a3a\u65adAI \u8a3a\u65ad\u7d50\u679c', url: window.location.href }).catch(() => {});
     } else {
       navigator.clipboard?.writeText(window.location.href)
-        .then(() => alert('URLをコピーしました！'))
-        .catch(() => alert('シェア機能はこのブラウザでは利用できません。'));
+        .then(() => alert('URL\u3092\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f\uff01'))
+        .catch(() => alert('\u30b7\u30a7\u30a2\u6a5f\u80fd\u306f\u3053\u306e\u30d6\u30e9\u30a6\u30b6\u3067\u306f\u5229\u7528\u3067\u304d\u307e\u305b\u3093\u3002'));
     }
   }
 
@@ -251,13 +261,13 @@ const App = (() => {
   }
 
   async function startFlow() {
-    showModal('AIモデルを読み込み中...', '初回は30秒ほどかかります');
+    showModal('AI\u30e2\u30c7\u30eb\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...', '\u521d\u56de\u306f30\u79d2\u307b\u3069\u304b\u304b\u308a\u307e\u3059');
     try {
       if (!modelReady) {
         await FaceDetector.load(pct => {
           document.getElementById('modal-text').textContent =
-            pct < 50 ? 'TensorFlow.js 初期化中...' :
-            pct < 90 ? 'モデルをダウンロード中...' : 'もうすぐ完了...';
+            pct < 50 ? 'TensorFlow.js \u521d\u671f\u5316\u4e2d...' :
+            pct < 90 ? '\u30e2\u30c7\u30eb\u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u4e2d...' : '\u3082\u3046\u3059\u3050\u5b8c\u4e86...';
         });
         modelReady = true;
       }
@@ -269,7 +279,7 @@ const App = (() => {
       await Camera.start(onLiveFace);
     } catch (err) {
       hideModal();
-      showError('初期化エラー', err.message);
+      showError('\u521d\u671f\u5316\u30a8\u30e9\u30fc', err.message);
     }
   }
 
