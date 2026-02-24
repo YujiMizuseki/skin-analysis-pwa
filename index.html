@@ -13,20 +13,15 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     .version-badge {
-      position: fixed;
-      top: 8px;
-      right: 10px;
-      font-size: 10px;
-      color: rgba(255,255,255,0.35);
-      font-family: monospace;
-      z-index: 9999;
-      pointer-events: none;
-      letter-spacing: 0.5px;
+      position: fixed; top: 8px; right: 10px;
+      font-size: 10px; color: rgba(255,255,255,0.35);
+      font-family: monospace; z-index: 9999;
+      pointer-events: none; letter-spacing: 0.5px;
     }
   </style>
 </head>
 <body>
-  <div class="version-badge">v1.0.5</div>
+  <div class="version-badge">v1.0.6</div>
 
   <!-- Screen 1: Welcome -->
   <div id="screen-welcome" class="screen active">
@@ -53,24 +48,15 @@
       <div class="features">
         <div class="feature">
           <span class="feature-icon">🔬</span>
-          <div>
-            <strong>高精度3D解析</strong>
-            <span>MediaPipe Face Meshで468点計測</span>
-          </div>
+          <div><strong>高精度3D解析</strong><span>MediaPipe Face Meshで468点計測</span></div>
         </div>
         <div class="feature">
           <span class="feature-icon">🦴</span>
-          <div>
-            <strong>骨格・肌を分離分析</strong>
-            <span>改善可能な要因だけを特定</span>
-          </div>
+          <div><strong>骨格・肌を分離分析</strong><span>改善可能な要因だけを特定</span></div>
         </div>
         <div class="feature">
           <span class="feature-icon">💊</span>
-          <div>
-            <strong>改善プラン提案</strong>
-            <span>ホームケア〜医療処置まで</span>
-          </div>
+          <div><strong>改善プラン提案</strong><span>ホームケア〜医療処置まで</span></div>
         </div>
       </div>
       <button id="btn-start" class="btn btn-primary">
@@ -94,7 +80,6 @@
       </div>
       <span id="step-label" class="step-label">1 / 3</span>
     </div>
-
     <div class="instruction-card" id="instruction-card">
       <div id="pose-emoji" class="pose-emoji">😐</div>
       <div class="instruction-text">
@@ -102,7 +87,6 @@
         <p id="step-desc">カメラを顔の正面に向け、<br>無表情のまま静止してください</p>
       </div>
     </div>
-
     <div class="camera-viewport">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay-canvas"></canvas>
@@ -117,7 +101,6 @@
         <span id="feedback-text">顔を検出中...</span>
       </div>
     </div>
-
     <div class="camera-controls">
       <p id="capture-hint" class="capture-hint">顔を枠内に合わせてください</p>
       <div class="capture-row">
@@ -150,7 +133,8 @@
       <ul class="analysis-log" id="analysis-log">
         <li id="log-model">⬜ AIモデル準備</li>
         <li id="log-detect">⬜ 顔ランドマーク検出 (3枚)</li>
-        <li id="log-nasolabial">⬜ 鼻唇溝（法令線）解析</li>
+        <li id="log-nasolabial">⬜ 法令線解析</li>
+        <li id="log-marionette">⬜ マリオネットライン解析</li>
         <li id="log-cheek">⬜ 頬のたるみ・弾力解析</li>
         <li id="log-wrinkle">⬜ シワ・目尻・目の下の検出</li>
         <li id="log-bone">⬜ 骨格構造の評価</li>
@@ -196,6 +180,7 @@
 
   <!-- App modules -->
   <script src="js/analyzers/nasolabialAnalyzer.js"></script>
+  <script src="js/analyzers/marionetteAnalyzer.js"></script>
   <script src="js/analyzers/cheekAnalyzer.js"></script>
   <script src="js/analyzers/boneStructureAnalyzer.js"></script>
   <script src="js/analyzers/wrinkleAnalyzer.js"></script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skin-ai-v5';  // bump to force cache refresh
+const CACHE_NAME = 'skin-ai-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './js/camera.js',
   './js/faceDetector.js',
   './js/analyzers/nasolabialAnalyzer.js',
+  './js/analyzers/marionetteAnalyzer.js',
   './js/analyzers/cheekAnalyzer.js',
   './js/analyzers/boneStructureAnalyzer.js',
   './js/analyzers/wrinkleAnalyzer.js',

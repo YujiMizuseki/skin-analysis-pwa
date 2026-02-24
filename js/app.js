@@ -64,7 +64,7 @@ const App = (() => {
     document.getElementById('capture-hint').textContent = '顔を枠内に合わせてください';
   }
 
-  // ─── Enable capture button (central function) ────────────────
+  // ─── Enable capture button ────────────────────────────────────
   function enableCapture(hint) {
     if (captureInProgress) return;
     const btn  = document.getElementById('btn-capture');
@@ -74,7 +74,7 @@ const App = (() => {
   }
 
   function disableCapture(hint) {
-    if (fallbackMode || captureInProgress) return; // Never disable when in fallback mode
+    if (fallbackMode || captureInProgress) return;
     const btn  = document.getElementById('btn-capture');
     const htEl = document.getElementById('capture-hint');
     btn.disabled = true;
@@ -83,19 +83,16 @@ const App = (() => {
 
   // ─── Live face detection callback ────────────────────────────
   function onLiveFace(kp) {
-    // Fallback from 8-second timeout
     if (kp && kp.fallback) {
       fallbackMode = true;
       enableCapture('⚠ 顔未検出でも撮影できます（精度低下）');
       return;
     }
-
     if (FaceDetector.isFaceGood(kp)) {
-      fallbackMode = true; // Real face found — also set flag so we stay enabled
+      fallbackMode = true;
       const posHint = FaceDetector.getFaceHint ? FaceDetector.getFaceHint(kp) : null;
       enableCapture(posHint ? `⚠ ${posHint} — 撮影可` : '✓ 準備完了！ボタンを押して撮影');
     } else {
-      // Only disable if fallback mode hasn't kicked in yet
       disableCapture('顔を枠内に合わせてください');
     }
   }
@@ -109,25 +106,18 @@ const App = (() => {
 
     try {
       const canvas = await Camera.captureFrame();
-
-      // Try detecting on the captured frame
       let kp = null;
       try { kp = await FaceDetector.detectFace(canvas); } catch(e) {}
-
-      // Allow capture even without face detection (use default analysis)
       captures.push({ canvas, landmarks: kp || null });
 
-      // Show thumbnail
       const thumbIdx = currentStep < 2 ? currentStep : 1;
       const slot = document.getElementById(`thumb-${thumbIdx}`);
       if (slot) {
         const img = document.createElement('img');
         img.src = canvas.toDataURL('image/jpeg', 0.7);
-        slot.innerHTML = '';
-        slot.appendChild(img);
+        slot.innerHTML = ''; slot.appendChild(img);
       }
 
-      // Flash effect
       const vp = document.querySelector('.camera-viewport');
       if (vp) { vp.style.filter = 'brightness(2.5)'; setTimeout(() => { vp.style.filter = ''; }, 120); }
 
@@ -135,14 +125,10 @@ const App = (() => {
       captureInProgress = false;
 
       if (currentStep < 3) {
-        fallbackMode = false; // Reset so next step waits for face or new timeout
+        fallbackMode = false;
         updateStepUI(currentStep);
-        // Give 600ms before re-enabling (avoid double-tap + let next frame arrive)
         setTimeout(() => {
-          if (!captureInProgress) {
-            fallbackMode = true; // Allow capture even if face not re-confirmed
-            enableCapture('撮影ボタンを押してください');
-          }
+          if (!captureInProgress) { fallbackMode = true; enableCapture('撮影ボタンを押してください'); }
         }, 600);
       } else {
         Camera.stop();
@@ -162,20 +148,18 @@ const App = (() => {
     const setLog = (id, state) => {
       const el = document.getElementById(id);
       if (!el) return;
-      el.classList.remove('active', 'done');
-      el.classList.add(state);
+      el.classList.remove('active', 'done'); el.classList.add(state);
       const txt = el.textContent.replace(/^[⬜🔄✅]\s/, '');
       if (state === 'active') el.textContent = '🔄 ' + txt;
       if (state === 'done')   el.textContent = '✅ ' + txt;
     };
-
     const setProgress = pct => {
       document.getElementById('progress-fill').style.width = pct + '%';
       document.getElementById('progress-pct').textContent  = pct + '%';
     };
 
     try {
-      setLog('log-model', 'done'); setProgress(15);
+      setLog('log-model', 'done'); setProgress(12);
 
       setLog('log-detect', 'active');
       await sleep(300);
@@ -183,31 +167,36 @@ const App = (() => {
       const neutralKP = c0?.landmarks || null;
       const smileKP   = c1?.landmarks || null;
       const downKP    = c2?.landmarks || null;
-      setLog('log-detect', 'done'); setProgress(30);
+      setLog('log-detect', 'done'); setProgress(25);
 
       setLog('log-nasolabial', 'active');
       const nasolabial = NasolabialAnalyzer.analyze(neutralKP);
-      await sleep(350);
-      setLog('log-nasolabial', 'done'); setProgress(46);
+      await sleep(250);
+      setLog('log-nasolabial', 'done'); setProgress(38);
+
+      setLog('log-marionette', 'active');
+      const marionette = MarionetteAnalyzer.analyze(neutralKP, downKP);
+      await sleep(250);
+      setLog('log-marionette', 'done'); setProgress(50);
 
       setLog('log-cheek', 'active');
       const cheek = CheekAnalyzer.analyze(neutralKP, smileKP, downKP);
-      await sleep(350);
-      setLog('log-cheek', 'done'); setProgress(62);
+      await sleep(250);
+      setLog('log-cheek', 'done'); setProgress(63);
 
       setLog('log-wrinkle', 'active');
       const wrinkle = WrinkleAnalyzer.analyze(neutralKP, smileKP);
-      await sleep(350);
+      await sleep(250);
       setLog('log-wrinkle', 'done'); setProgress(76);
 
       setLog('log-bone', 'active');
       const bone = BoneStructureAnalyzer.analyze(neutralKP, smileKP, downKP);
-      await sleep(350);
+      await sleep(250);
       setLog('log-bone', 'done'); setProgress(88);
 
       setLog('log-score', 'active');
-      const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone);
-      await sleep(450);
+      const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone, marionette);
+      await sleep(400);
       setLog('log-score', 'done'); setProgress(100);
 
       await sleep(500);
@@ -223,7 +212,6 @@ const App = (() => {
     showScreen('results');
   }
 
-  // ─── Share ───────────────────────────────────────────────────
   function shareResults() {
     if (navigator.share) {
       navigator.share({ title: '肌診断AI 診断結果', url: window.location.href }).catch(() => {});
@@ -234,7 +222,6 @@ const App = (() => {
     }
   }
 
-  // ─── Reset ───────────────────────────────────────────────────
   function reset() {
     currentStep = 0; captures = [];
     fallbackMode = false; captureInProgress = false;
@@ -247,7 +234,6 @@ const App = (() => {
     });
   }
 
-  // ─── Init ────────────────────────────────────────────────────
   async function init() {
     document.getElementById('btn-start').addEventListener('click', startFlow);
     document.getElementById('btn-back-camera').addEventListener('click', () => { Camera.stop(); showScreen('welcome'); });
@@ -257,15 +243,10 @@ const App = (() => {
     document.getElementById('btn-error-ok').addEventListener('click', () => {
       document.getElementById('modal-error').classList.add('hidden');
     });
-
-    // Background model preload
     setTimeout(() => {
-      FaceDetector.load(
-        (pct, msg) => console.log(`[Model] ${pct}% ${msg}`)
-      ).then(() => {
-        modelReady = true;
-        console.log('[App] Face detection model ready');
-      }).catch(e => console.warn('[App] Preload failed:', e.message));
+      FaceDetector.load((pct, msg) => console.log(`[Model] ${pct}% ${msg}`))
+        .then(() => { modelReady = true; console.log('[App] Model ready'); })
+        .catch(e => console.warn('[App] Preload failed:', e.message));
     }, 800);
   }
 

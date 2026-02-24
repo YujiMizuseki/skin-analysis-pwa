@@ -3,31 +3,35 @@
  * Combines all feature scores into a final skin age estimate
  */
 const SkinAgeScorer = (() => {
-  function calculate(nasolabial, cheek, wrinkle, bone) {
+  function calculate(nasolabial, cheek, wrinkle, bone, marionette) {
     // Weighted combination using primary scores
     const weights = {
-      nasolabial: 0.22,
-      cheek: 0.22,
-      wrinkle: 0.20,
-      bone: 0.18,
-      elasticity: 0.10,
-      underEye: 0.08
+      nasolabial:  0.18,
+      marionette:  0.15,
+      cheek:       0.18,
+      wrinkle:     0.17,
+      bone:        0.14,
+      elasticity:  0.10,
+      underEye:    0.08
     };
 
     const totalScore =
-      (nasolabial.score   || 65) * weights.nasolabial +
-      (cheek.sagScore     || cheek.score || 70) * weights.cheek +
+      (nasolabial.score              || 65) * weights.nasolabial +
+      (marionette  ? marionette.score || 68 : 68) * weights.marionette +
+      (cheek.sagScore || cheek.score || 70) * weights.cheek +
       (wrinkle.crowFeetScore || wrinkle.score || 72) * weights.wrinkle +
-      (bone.score         || 72) * weights.bone +
-      (cheek.elasticityScore || 70) * weights.elasticity +
-      (wrinkle.underEyeScore || 70) * weights.underEye;
+      (bone.score                    || 72) * weights.bone +
+      (cheek.elasticityScore         || 70) * weights.elasticity +
+      (wrinkle.underEyeScore         || 70) * weights.underEye;
 
-    const rounded = Math.round(totalScore);
+    const rounded  = Math.round(totalScore);
     const ageRange = scoreToAge(rounded);
     const boneFactor = bone.boneFactor || 25;
     const skinFactor = 100 - boneFactor;
 
-    // 8 feature items — fixed display order
+    // 9 feature items — fixed display order
+    const mario = marionette || { score: 68, severity: genericSeverity(68), skinContrib: 80, boneContrib: 20 };
+
     const features = [
       {
         key: 'nasolabial',
@@ -36,6 +40,14 @@ const SkinAgeScorer = (() => {
         score: nasolabial.score || 65,
         severity: nasolabial.severity || genericSeverity(nasolabial.score || 65),
         skinContrib: 75, boneContrib: 25
+      },
+      {
+        key: 'marionette',
+        name: 'マリオネットライン',
+        icon: '🎭',
+        score: mario.score,
+        severity: mario.severity,
+        skinContrib: mario.skinContrib, boneContrib: mario.boneContrib
       },
       {
         key: 'cheekSag',
@@ -102,11 +114,11 @@ const SkinAgeScorer = (() => {
       skinFactor,
       features,
       grade: getGrade(rounded),
-      rawData: { nasolabial, cheek, wrinkle, bone }
+      rawData: { nasolabial, cheek, wrinkle, bone, marionette }
     };
   }
 
-  // ─── Severity helpers ────────────────────────────────────────
+  // ─── Severity helpers ────────────────────────────────────────────────
   function genericSeverity(score) {
     if (score >= 80) return { label: '優秀',   color: '#2ecc71', level: 0 };
     if (score >= 65) return { label: '良好',   color: '#27ae60', level: 1 };
@@ -142,7 +154,7 @@ const SkinAgeScorer = (() => {
     return              { label: '低め',   color: '#e67e22', level: 3 };
   }
 
-  // ─── Score → age range ──────────────────────────────────────
+  // ─── Score → age range ─────────────────────────────────────────────
   function scoreToAge(score) {
     if (score >= 90) return { min: 18, max: 23 };
     if (score >= 82) return { min: 24, max: 28 };
