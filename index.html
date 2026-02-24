@@ -18,10 +18,46 @@
       font-family: monospace; z-index: 9999;
       pointer-events: none; letter-spacing: 0.5px;
     }
+    /* ── Profile screen ───────────────────────────────── */
+    .profile-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px 8px;
+    }
+    .profile-title {
+      font-size: 1.05rem; font-weight: 700; margin: 0;
+    }
+    .profile-body {
+      padding: 8px 20px 40px;
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .profile-section { margin-bottom: 28px; }
+    .profile-label {
+      font-size: 0.82rem; color: var(--text2);
+      margin-bottom: 12px; font-weight: 600;
+    }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      padding: 9px 20px; border-radius: 24px;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: var(--text2); font-size: 0.92rem;
+      cursor: pointer; transition: all 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .chip.selected {
+      background: linear-gradient(135deg,rgba(233,30,140,0.18),rgba(155,89,182,0.18));
+      border-color: rgba(233,30,140,0.7);
+      color: var(--text); font-weight: 700;
+    }
+    .profile-divider {
+      border: none; border-top: 1px solid rgba(255,255,255,0.08);
+      margin: 4px 0 24px;
+    }
   </style>
 </head>
 <body>
-  <div class="version-badge">v1.1.0</div>
+  <div class="version-badge">v1.1.1</div>
 
   <!-- Screen 1: Welcome -->
   <div id="screen-welcome" class="screen active">
@@ -64,6 +100,48 @@
         <span class="btn-arrow">→</span>
       </button>
       <p class="privacy-notice">🔒 撮影データは端末内のみで処理。外部送信なし</p>
+    </div>
+  </div>
+
+  <!-- Screen 1.5: Profile (age / gender) -->
+  <div id="screen-profile" class="screen">
+    <div class="profile-header">
+      <button id="btn-back-profile" class="btn-icon-round">←</button>
+      <h2 class="profile-title">プロフィール入力</h2>
+    </div>
+    <div class="profile-body">
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:24px;line-height:1.6;">
+        入力情報をもとに、実年齢との比較や性別補正を行います。
+      </p>
+
+      <div class="profile-section">
+        <p class="profile-label">あなたの年齢層</p>
+        <div class="chip-group" id="age-chips">
+          <button class="chip" data-age-value="17" data-age-label="10代">10代</button>
+          <button class="chip" data-age-value="25" data-age-label="20代">20代</button>
+          <button class="chip selected" data-age-value="35" data-age-label="30代">30代</button>
+          <button class="chip" data-age-value="45" data-age-label="40代">40代</button>
+          <button class="chip" data-age-value="55" data-age-label="50代">50代</button>
+          <button class="chip" data-age-value="65" data-age-label="60代以上">60代以上</button>
+        </div>
+      </div>
+
+      <hr class="profile-divider">
+
+      <div class="profile-section">
+        <p class="profile-label">性別</p>
+        <div class="chip-group" id="gender-chips">
+          <button class="chip selected" data-gender="female">女性</button>
+          <button class="chip" data-gender="male">男性</button>
+          <button class="chip" data-gender="other">回答しない</button>
+        </div>
+      </div>
+
+      <button id="btn-confirm-profile" class="btn btn-primary" style="margin-top:8px">
+        <span>診断を開始する</span>
+        <span class="btn-arrow">→</span>
+      </button>
+      <p class="privacy-notice" style="margin-top:16px;">🔒 入力情報は端末内のみで使用されます</p>
     </div>
   </div>
 

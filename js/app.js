@@ -5,8 +5,9 @@ const App = (() => {
   let currentStep = 0;
   let captures = [];
   let modelReady = false;
-  let fallbackMode = false;   // true once 8s timeout fires or face detected
+  let fallbackMode = false;
   let captureInProgress = false;
+  let userProfile = { ageValue: 35, ageLabel: '30代', gender: 'female' };
 
   const STEPS = [
     { id: 'neutral', emoji: '\ud83d\ude10', title: '\u6b63\u9762\u30fb\u7121\u8868\u60c5',
@@ -17,7 +18,7 @@ const App = (() => {
       desc: '\u30b9\u30de\u30db\u3092\u984e\u306e\u4e0b\u306b\u7f6e\u3044\u3066<br>\u4e0a\u306b\u5411\u3051\u3066\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044' },
   ];
 
-  // ─── Screen management ───────────────────────────────────────────────────────
+  // ─── Screen management ────────────────────────────────────────────
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('screen-' + id);
@@ -42,7 +43,7 @@ const App = (() => {
     document.getElementById('modal-error').classList.remove('hidden');
   }
 
-  // ─── Step UI ─────────────────────────────────────────────────────────────────
+  // ─── Step UI ───────────────────────────────────────────────────
   function updateStepUI(step) {
     const s = STEPS[step];
     document.getElementById('pose-emoji').textContent   = s.emoji;
@@ -65,7 +66,7 @@ const App = (() => {
     document.getElementById('capture-hint').textContent = '\u9854\u3092\u67a0\u5185\u306b\u5408\u308f\u305b\u3066\u304f\u3060\u3055\u3044';
   }
 
-  // ─── Enable capture button ────────────────────────────────────────────────────
+  // ─── Enable/disable capture ──────────────────────────────────────
   function enableCapture(hint) {
     if (captureInProgress) return;
     const btn  = document.getElementById('btn-capture');
@@ -82,7 +83,7 @@ const App = (() => {
     if (hint && htEl) htEl.textContent = hint;
   }
 
-  // ─── Live face detection callback ────────────────────────────────────────────
+  // ─── Live face detection callback ──────────────────────────────────
   function onLiveFace(kp) {
     if (kp && kp.fallback) {
       fallbackMode = true;
@@ -98,7 +99,7 @@ const App = (() => {
     }
   }
 
-  // ─── Capture one photo ───────────────────────────────────────────────────────
+  // ─── Capture one photo ──────────────────────────────────────────────
   async function capturePhoto() {
     if (captureInProgress) return;
     captureInProgress = true;
@@ -142,7 +143,7 @@ const App = (() => {
     }
   }
 
-  // ─── Analysis pipeline ───────────────────────────────────────────────────────
+  // ─── Analysis pipeline ─────────────────────────────────────────────
   async function runAnalysis() {
     showScreen('processing');
 
@@ -167,7 +168,7 @@ const App = (() => {
       const [c0, c1, c2] = captures;
       const neutralKP  = c0?.landmarks || null;
       const smileKP    = c1?.landmarks || null;
-      const bottomKP   = c2?.landmarks || null;  // \u771f\u4e0b\u304b\u3089\u64ae\u5f71
+      const bottomKP   = c2?.landmarks || null;
       setLog('log-detect', 'done'); setProgress(22);
 
       setLog('log-nasolabial', 'active');
@@ -201,7 +202,7 @@ const App = (() => {
       setLog('log-chin', 'done'); setProgress(88);
 
       setLog('log-score', 'active');
-      const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone, marionette, chin);
+      const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone, marionette, chin, userProfile);
       await sleep(400);
       setLog('log-score', 'done'); setProgress(100);
 
@@ -214,7 +215,7 @@ const App = (() => {
   }
 
   function showResults(result) {
-    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result);
+    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result, userProfile);
     showScreen('results');
   }
 
@@ -240,23 +241,21 @@ const App = (() => {
     });
   }
 
-  async function init() {
-    document.getElementById('btn-start').addEventListener('click', startFlow);
-    document.getElementById('btn-back-camera').addEventListener('click', () => { Camera.stop(); showScreen('welcome'); });
-    document.getElementById('btn-capture').addEventListener('click', capturePhoto);
-    document.getElementById('btn-retry').addEventListener('click', reset);
-    document.getElementById('btn-share').addEventListener('click', shareResults);
-    document.getElementById('btn-error-ok').addEventListener('click', () => {
-      document.getElementById('modal-error').classList.add('hidden');
-    });
-    setTimeout(() => {
-      FaceDetector.load((pct, msg) => console.log(`[Model] ${pct}% ${msg}`))
-        .then(() => { modelReady = true; console.log('[App] Model ready'); })
-        .catch(e => console.warn('[App] Preload failed:', e.message));
-    }, 800);
+  // ─── Profile screen ──────────────────────────────────────────────────
+  function confirmProfile() {
+    const ageChip = document.querySelector('#age-chips .chip.selected');
+    if (ageChip) {
+      userProfile.ageValue = parseInt(ageChip.dataset.ageValue, 10);
+      userProfile.ageLabel = ageChip.dataset.ageLabel;
+    }
+    const genderChip = document.querySelector('#gender-chips .chip.selected');
+    if (genderChip) {
+      userProfile.gender = genderChip.dataset.gender;
+    }
+    startCamera();
   }
 
-  async function startFlow() {
+  async function startCamera() {
     showModal('AI\u30e2\u30c7\u30eb\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...', '\u521d\u56de\u306f30\u79d2\u307b\u3069\u304b\u304b\u308a\u307e\u3059');
     try {
       if (!modelReady) {
@@ -277,6 +276,51 @@ const App = (() => {
       hideModal();
       showError('\u521d\u671f\u5316\u30a8\u30e9\u30fc', err.message);
     }
+  }
+
+  async function init() {
+    // Welcome → Profile
+    document.getElementById('btn-start').addEventListener('click', startFlow);
+    // Profile back → Welcome
+    document.getElementById('btn-back-profile').addEventListener('click', () => showScreen('welcome'));
+    // Profile confirm → Camera
+    document.getElementById('btn-confirm-profile').addEventListener('click', confirmProfile);
+    // Camera back → Profile
+    document.getElementById('btn-back-camera').addEventListener('click', () => { Camera.stop(); showScreen('profile'); });
+
+    document.getElementById('btn-capture').addEventListener('click', capturePhoto);
+    document.getElementById('btn-retry').addEventListener('click', reset);
+    document.getElementById('btn-share').addEventListener('click', shareResults);
+    document.getElementById('btn-error-ok').addEventListener('click', () => {
+      document.getElementById('modal-error').classList.add('hidden');
+    });
+
+    // Age chip selection
+    document.getElementById('age-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      document.querySelectorAll('#age-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+
+    // Gender chip selection
+    document.getElementById('gender-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      document.querySelectorAll('#gender-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+
+    // Preload model in background
+    setTimeout(() => {
+      FaceDetector.load((pct, msg) => console.log(`[Model] ${pct}% ${msg}`))
+        .then(() => { modelReady = true; console.log('[App] Model ready'); })
+        .catch(e => console.warn('[App] Preload failed:', e.message));
+    }, 800);
+  }
+
+  function startFlow() {
+    showScreen('profile');
   }
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
