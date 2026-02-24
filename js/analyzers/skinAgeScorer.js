@@ -3,25 +3,28 @@
  * Combines all feature scores into a final skin age estimate
  */
 const SkinAgeScorer = (() => {
-  function calculate(nasolabial, cheek, wrinkle, bone, marionette) {
+  function calculate(nasolabial, cheek, wrinkle, bone, marionette, chin) {
     const w = {
-      nasolabial: 0.15,
-      marionette: 0.13,
-      cheek:      0.16,
-      crowFeet:   0.11,
-      glabellar:  0.11,
-      eyelid:     0.09,
-      bone:       0.10,
-      elasticity: 0.08,
+      nasolabial: 0.13,
+      marionette: 0.11,
+      chin:       0.10,
+      cheek:      0.14,
+      crowFeet:   0.10,
+      glabellar:  0.10,
+      eyelid:     0.08,
+      bone:       0.09,
+      elasticity: 0.07,
       underEye:   0.04,
-      smile:      0.03
+      smile:      0.04
     };
 
-    const mario = marionette || { score: 68, severity: genericSeverity(68), skinContrib: 80, boneContrib: 20 };
+    const mario    = marionette || { score: 68, severity: genericSeverity(68), skinContrib: 80, boneContrib: 20 };
+    const chinData = chin       || { score: 65, severity: chinSeverity(65), future: '数年後に注意が必要' };
 
     const totalScore =
       (nasolabial.score              || 65) * w.nasolabial +
       mario.score                           * w.marionette +
+      chinData.score                        * w.chin +
       (cheek.sagScore || cheek.score || 70) * w.cheek +
       (wrinkle.crowFeetScore         || 72) * w.crowFeet +
       (wrinkle.glabellarScore        || 72) * w.glabellar +
@@ -36,11 +39,11 @@ const SkinAgeScorer = (() => {
     const boneFactor = bone.boneFactor || 25;
     const skinFactor = 100 - boneFactor;
 
-    // 10 feature items — fixed display order (top → bottom of face)
+    // 11 feature items — fixed display order (top → bottom of face)
     const features = [
       // ─ 上顔面 ────────────────────────────────────────────
       {
-        key: 'glabellar', name: '砉間のシワ', icon: '🧐',
+        key: 'glabellar', name: '眉間のシワ', icon: '🧐',
         score: wrinkle.glabellarScore || 72,
         severity: glabellarSeverity(wrinkle.glabellarScore || 72),
         skinContrib: 92, boneContrib: 8
@@ -71,7 +74,7 @@ const SkinAgeScorer = (() => {
         skinContrib: 75, boneContrib: 25
       },
       {
-        key: 'cheekSag', name: '頬のたるみ', icon: '💫',
+        key: 'cheekSag', name: '頰のたるみ', icon: '💫',
         score: cheek.sagScore || cheek.score || 70,
         severity: genericSeverity(cheek.sagScore || cheek.score || 70),
         skinContrib: 70, boneContrib: 30
@@ -96,6 +99,13 @@ const SkinAgeScorer = (() => {
         skinContrib: mario.skinContrib, boneContrib: mario.boneContrib
       },
       {
+        key: 'chin', name: '顎のたるみ', icon: '🪴',
+        score: chinData.score,
+        severity: chinData.severity,
+        future: chinData.future,
+        skinContrib: 65, boneContrib: 35
+      },
+      {
         key: 'jawLine', name: 'フェイスライン', icon: '🔷',
         score: bone.jawScore || 68,
         severity: jawSeverity(bone.jawScore || 68),
@@ -106,11 +116,11 @@ const SkinAgeScorer = (() => {
     return {
       totalScore: rounded, ageRange, boneFactor, skinFactor,
       features, grade: getGrade(rounded),
-      rawData: { nasolabial, cheek, wrinkle, bone, marionette }
+      rawData: { nasolabial, cheek, wrinkle, bone, marionette, chin: chinData }
     };
   }
 
-  // ─── Severity helpers ───────────────────────────────────────────
+  // ─── Severity helpers ───────────────────────────────────────────────
   function genericSeverity(s) {
     if (s >= 80) return { label: '優秀',   color: '#2ecc71', level: 0 };
     if (s >= 65) return { label: '良好',   color: '#27ae60', level: 1 };
@@ -125,8 +135,8 @@ const SkinAgeScorer = (() => {
   }
   function eyelidSeverity(s) {
     if (s >= 80) return { label: 'ぱっちり',   color: '#2ecc71', level: 0 };
-    if (s >= 65) return { label: 'やや挫れ',   color: '#27ae60', level: 1 };
-    if (s >= 48) return { label: 'まぶた挫れ', color: '#f39c12', level: 2 };
+    if (s >= 65) return { label: 'やや挙れ',   color: '#27ae60', level: 1 };
+    if (s >= 48) return { label: 'まぶた挙れ', color: '#f39c12', level: 2 };
     return            { label: 'フードあり', color: '#e74c3c', level: 3 };
   }
   function elasticitySeverity(s) {
@@ -140,6 +150,12 @@ const SkinAgeScorer = (() => {
     if (s >= 65) return { label: 'やや影あり', color: '#27ae60', level: 1 };
     if (s >= 48) return { label: 'くすみあり', color: '#f39c12', level: 2 };
     return            { label: '要ケア',   color: '#e74c3c', level: 3 };
+  }
+  function chinSeverity(s) {
+    if (s >= 80) return { label: 'シャープ',    color: '#2ecc71', level: 0 };
+    if (s >= 65) return { label: 'やや丸み',    color: '#27ae60', level: 1 };
+    if (s >= 48) return { label: 'たるみあり',  color: '#f39c12', level: 2 };
+    return             { label: '要ケア',       color: '#e74c3c', level: 3 };
   }
   function jawSeverity(s) {
     if (s >= 80) return { label: 'シャープ',   color: '#3498db', level: 0 };
