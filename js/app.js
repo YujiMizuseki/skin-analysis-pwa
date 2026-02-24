@@ -2,28 +2,24 @@
  * app.js - Main Application Controller
  */
 const App = (() => {
-  // State
   let currentStep = 0;
-  let captures = []; // {canvas, landmarks}
+  let captures = [];
   let modelReady = false;
 
   const STEPS = [
     { id: 'neutral', emoji: '😐', title: '正面・無表情',
       desc: 'カメラを顔の正面に向け、<br>無表情のまま静止してください' },
-    { id: 'smile', emoji: '😊', title: '正面・笑顔',
+    { id: 'smile',   emoji: '😊', title: '正面・笑顔',
       desc: '正面を向いたまま、<br>自然な笑顔を作ってください' },
-    { id: 'down', emoji: '😶', title: '少し下向き',
+    { id: 'down',    emoji: '😶', title: '少し下向き',
       desc: 'あごをやや引いて下向きに。<br>重力によるたるみを確認します' },
   ];
 
-  // Screen management
+  // ─── Screen management ───────────────────────────────────────
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('screen-' + id);
-    if (el) {
-      el.classList.add('active');
-      el.scrollTop = 0;
-    }
+    if (el) { el.classList.add('active'); el.scrollTop = 0; }
   }
 
   function showModal(text, sub) {
@@ -39,97 +35,93 @@ const App = (() => {
 
   function showError(title, msg) {
     document.getElementById('error-title').textContent = title || 'エラー';
-    document.getElementById('error-msg').textContent = msg || '不明なエラーが発生しました。';
+    document.getElementById('error-msg').textContent   = msg   || '不明なエラーが発生しました。';
     document.getElementById('modal-loading').classList.add('hidden');
     document.getElementById('modal-error').classList.remove('hidden');
   }
 
-  // Step UI updates
+  // ─── Step UI ─────────────────────────────────────────────────
   function updateStepUI(step) {
     const s = STEPS[step];
-    document.getElementById('pose-emoji').textContent = s.emoji;
-    document.getElementById('step-title').textContent = s.title;
-    document.getElementById('step-desc').innerHTML = s.desc;
-    document.getElementById('step-label').textContent = `${step + 1} / 3`;
+    document.getElementById('pose-emoji').textContent   = s.emoji;
+    document.getElementById('step-title').textContent   = s.title;
+    document.getElementById('step-desc').innerHTML      = s.desc;
+    document.getElementById('step-label').textContent   = `${step + 1} / 3`;
 
-    // Update step nodes
     for (let i = 0; i < 3; i++) {
       const node = document.getElementById(`node-${i}`);
       const line = document.getElementById(`line-${i}`);
       node.classList.remove('active', 'done');
       if (i < step) node.classList.add('done');
       else if (i === step) node.classList.add('active');
-      if (line) {
-        line.classList.remove('done');
-        if (i < step) line.classList.add('done');
-      }
+      if (line) { line.classList.remove('done'); if (i < step) line.classList.add('done'); }
     }
 
-    // Reset capture button
     const btn = document.getElementById('btn-capture');
     btn.disabled = true;
     document.getElementById('capture-hint').textContent = '顔を枠内に合わせてください';
   }
 
-  // Face detection callback during live preview
+  // ─── Live face detection callback ────────────────────────────
   function onLiveFace(kp) {
-    const btn = document.getElementById('btn-capture');
+    const btn  = document.getElementById('btn-capture');
     const hint = document.getElementById('capture-hint');
+
+    // Fallback from timeout
+    if (kp && kp.fallback) {
+      btn.disabled = false;
+      hint.textContent = '⚠ 顔未検出でも撮影できます（精度低下）';
+      return;
+    }
+
     if (FaceDetector.isFaceGood(kp)) {
       btn.disabled = false;
-      hint.textContent = '✓ 準備完了！ボタンを押して撮影';
+      // Show position hint if not ideal
+      const posHint = FaceDetector.getFaceHint ? FaceDetector.getFaceHint(kp) : null;
+      hint.textContent = posHint
+        ? `⚠ ${posHint} — 撮影可`
+        : '✓ 準備完了！ボタンを押して撮影';
     } else {
       btn.disabled = true;
-      if (!kp || kp.length < 100) {
-        hint.textContent = '顔を枠内に合わせてください';
-      } else {
-        hint.textContent = '正面を向いてください';
-      }
+      hint.textContent = '顔を枠内に合わせてください';
     }
   }
 
-  // Capture one photo
+  // ─── Capture one photo ───────────────────────────────────────
   async function capturePhoto() {
     const btn = document.getElementById('btn-capture');
     btn.disabled = true;
 
     try {
       const canvas = await Camera.captureFrame();
-      const kp = await FaceDetector.detectFace(canvas);
 
-      if (!kp || kp.length < 100) {
-        showError('顔を検出できませんでした', '明るい場所で、正面を向いて再度お試しください。');
-        btn.disabled = false;
-        return;
-      }
+      // Try detecting on the captured frame
+      let kp = null;
+      try { kp = await FaceDetector.detectFace(canvas); } catch(e) {}
 
-      // Store capture
-      captures.push({ canvas, landmarks: kp });
+      // Allow capture even without face detection (use default analysis)
+      captures.push({ canvas, landmarks: kp || null });
 
       // Show thumbnail
-      const thumbSlot = document.getElementById(`thumb-${Math.min(currentStep, 1)}`);
-      if (thumbSlot) {
+      const slot = document.getElementById(`thumb-${Math.min(currentStep, 1)}`);
+      if (slot) {
         const img = document.createElement('img');
         img.src = canvas.toDataURL('image/jpeg', 0.7);
-        thumbSlot.innerHTML = '';
-        thumbSlot.appendChild(img);
+        slot.innerHTML = '';
+        slot.appendChild(img);
       }
 
-      // Flash effect
-      const viewport = document.querySelector('.camera-viewport');
-      if (viewport) {
-        viewport.style.filter = 'brightness(2)';
-        setTimeout(() => { viewport.style.filter = ''; }, 150);
-      }
+      // Flash
+      const vp = document.querySelector('.camera-viewport');
+      if (vp) { vp.style.filter = 'brightness(2.5)'; setTimeout(() => { vp.style.filter = ''; }, 120); }
 
       currentStep++;
 
       if (currentStep < 3) {
-        // Next step
         updateStepUI(currentStep);
-        btn.disabled = true;
+        // Re-enable button after short delay to avoid double-tap
+        setTimeout(() => { btn.disabled = false; }, 500);
       } else {
-        // All 3 captured – proceed to analysis
         Camera.stop();
         await runAnalysis();
       }
@@ -139,7 +131,7 @@ const App = (() => {
     }
   }
 
-  // Analysis pipeline
+  // ─── Analysis pipeline ───────────────────────────────────────
   async function runAnalysis() {
     showScreen('processing');
 
@@ -148,58 +140,53 @@ const App = (() => {
       if (!el) return;
       el.classList.remove('active', 'done');
       el.classList.add(state);
-      if (state === 'active') el.textContent = '🔄 ' + el.textContent.slice(2);
-      if (state === 'done')   el.textContent = '✅ ' + el.textContent.slice(2);
+      const txt = el.textContent.replace(/^[⬜🔄✅]\s/, '');
+      if (state === 'active') el.textContent = '🔄 ' + txt;
+      if (state === 'done')   el.textContent = '✅ ' + txt;
     };
 
     const setProgress = pct => {
       document.getElementById('progress-fill').style.width = pct + '%';
-      document.getElementById('progress-pct').textContent = pct + '%';
+      document.getElementById('progress-pct').textContent  = pct + '%';
     };
 
     try {
-      setLog('log-model', 'done');
-      setProgress(15);
+      setLog('log-model', 'done'); setProgress(15);
 
       setLog('log-detect', 'active');
       await sleep(300);
-      setProgress(25);
-
-      const [neutralKP, smileKP, downKP] = captures.map(c => c.landmarks);
-      setLog('log-detect', 'done');
-      setProgress(35);
+      const [c0, c1, c2] = captures;
+      const neutralKP = c0?.landmarks || null;
+      const smileKP   = c1?.landmarks || null;
+      const downKP    = c2?.landmarks || null;
+      setLog('log-detect', 'done'); setProgress(30);
 
       setLog('log-nasolabial', 'active');
       const nasolabial = NasolabialAnalyzer.analyze(neutralKP);
-      await sleep(400);
-      setLog('log-nasolabial', 'done');
-      setProgress(50);
+      await sleep(350);
+      setLog('log-nasolabial', 'done'); setProgress(46);
 
       setLog('log-cheek', 'active');
       const cheek = CheekAnalyzer.analyze(neutralKP, smileKP, downKP);
-      await sleep(400);
-      setLog('log-cheek', 'done');
-      setProgress(63);
+      await sleep(350);
+      setLog('log-cheek', 'done'); setProgress(62);
 
       setLog('log-wrinkle', 'active');
       const wrinkle = WrinkleAnalyzer.analyze(neutralKP, smileKP);
-      await sleep(400);
-      setLog('log-wrinkle', 'done');
-      setProgress(76);
+      await sleep(350);
+      setLog('log-wrinkle', 'done'); setProgress(76);
 
       setLog('log-bone', 'active');
       const bone = BoneStructureAnalyzer.analyze(neutralKP, smileKP, downKP);
-      await sleep(400);
-      setLog('log-bone', 'done');
-      setProgress(88);
+      await sleep(350);
+      setLog('log-bone', 'done'); setProgress(88);
 
       setLog('log-score', 'active');
       const result = SkinAgeScorer.calculate(nasolabial, cheek, wrinkle, bone);
-      await sleep(500);
-      setLog('log-score', 'done');
-      setProgress(100);
+      await sleep(450);
+      setLog('log-score', 'done'); setProgress(100);
 
-      await sleep(600);
+      await sleep(500);
       showResults(result);
 
     } catch (err) {
@@ -208,21 +195,14 @@ const App = (() => {
   }
 
   function showResults(result) {
-    const html = ReportGenerator.generate(result);
-    document.getElementById('results-body').innerHTML = html;
+    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result);
     showScreen('results');
   }
 
-  // Share results
+  // ─── Share ───────────────────────────────────────────────────
   function shareResults() {
-    const body = document.getElementById('results-body');
-    const text = body ? body.innerText.substring(0, 300) + '...' : '';
     if (navigator.share) {
-      navigator.share({
-        title: '肌診断AI 診断結果',
-        text: `肌診断AIで診断しました！\n${text}`,
-        url: window.location.href
-      }).catch(() => {});
+      navigator.share({ title: '肌診断AI 診断結果', url: window.location.href }).catch(() => {});
     } else {
       navigator.clipboard?.writeText(window.location.href)
         .then(() => alert('URLをコピーしました！'))
@@ -230,22 +210,20 @@ const App = (() => {
     }
   }
 
-  // Reset app
+  // ─── Reset ───────────────────────────────────────────────────
   function reset() {
-    currentStep = 0;
-    captures = [];
+    currentStep = 0; captures = [];
     Camera.stop();
     showScreen('welcome');
     document.getElementById('results-body').innerHTML = '';
-    ['thumb-0', 'thumb-1'].forEach(id => {
+    ['thumb-0','thumb-1'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = '';
     });
   }
 
-  // Init
+  // ─── Init ────────────────────────────────────────────────────
   async function init() {
-    // Bind events
     document.getElementById('btn-start').addEventListener('click', startFlow);
     document.getElementById('btn-back-camera').addEventListener('click', () => { Camera.stop(); showScreen('welcome'); });
     document.getElementById('btn-capture').addEventListener('click', capturePhoto);
@@ -255,29 +233,30 @@ const App = (() => {
       document.getElementById('modal-error').classList.add('hidden');
     });
 
-    // Preload model in background
+    // Background model preload
     setTimeout(() => {
-      FaceDetector.load((pct, msg) => {
-        console.log(`Model loading: ${pct}% - ${msg}`);
-      }).then(() => {
+      FaceDetector.load(
+        (pct, msg) => console.log(`[Model] ${pct}% ${msg}`)
+      ).then(() => {
         modelReady = true;
-        console.log('Face detection model ready');
-      }).catch(err => console.warn('Preload failed:', err.message));
-    }, 1000);
+        console.log('[App] Face detection model ready');
+      }).catch(e => console.warn('[App] Preload failed:', e.message));
+    }, 800);
   }
 
   async function startFlow() {
     showModal('AIモデルを読み込み中...', '初回は30秒ほどかかります');
     try {
       if (!modelReady) {
-        await FaceDetector.load((pct, msg) => {
-          document.getElementById('modal-text').textContent = msg;
+        await FaceDetector.load(pct => {
+          document.getElementById('modal-text').textContent =
+            pct < 50 ? 'TensorFlow.js 初期化中...' :
+            pct < 90 ? 'モデルをダウンロード中...' : 'もうすぐ完了...';
         });
         modelReady = true;
       }
       hideModal();
-      currentStep = 0;
-      captures = [];
+      currentStep = 0; captures = [];
       updateStepUI(0);
       showScreen('camera');
       await Camera.start(onLiveFace);
@@ -287,8 +266,7 @@ const App = (() => {
     }
   }
 
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
   return { init };
 })();
 
