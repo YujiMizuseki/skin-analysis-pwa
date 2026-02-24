@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skin-ai-v9';
+const CACHE_NAME = 'skin-ai-v10';
 const ASSETS = [
   './',
   './index.html',

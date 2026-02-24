@@ -15,11 +15,9 @@ const App = (() => {
       desc: '\u6b63\u9762\u3092\u5411\u3044\u305f\u307e\u307e\u3001<br>\u81ea\u7136\u306a\u7b11\u9854\u3092\u4f5c\u3063\u3066\u304f\u3060\u3055\u3044' },
     { id: 'bottom',  emoji: '\ud83d\udcf1', title: '\u771f\u4e0b\u304b\u3089\u64ae\u5f71',
       desc: '\u30b9\u30de\u30db\u3092\u984e\u306e\u4e0b\u306b\u7f6e\u3044\u3066<br>\u4e0a\u306b\u5411\u3051\u3066\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044' },
-    { id: 'top',     emoji: '\ud83d\ude46', title: '\u771f\u4e0a\u304b\u3089\u64ae\u5f71',
-      desc: '\u30b9\u30de\u30db\u3092\u982d\u306e\u4e0a\u306b\u639b\u3052<br>\u4e0b\u5411\u304d\u306b\u3057\u3066\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044' },
   ];
 
-  // \u2500\u2500\u2500 Screen management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ─── Screen management ───────────────────────────────────────────────────────
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('screen-' + id);
@@ -44,15 +42,15 @@ const App = (() => {
     document.getElementById('modal-error').classList.remove('hidden');
   }
 
-  // \u2500\u2500\u2500 Step UI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ─── Step UI ─────────────────────────────────────────────────────────────────
   function updateStepUI(step) {
     const s = STEPS[step];
     document.getElementById('pose-emoji').textContent   = s.emoji;
     document.getElementById('step-title').textContent   = s.title;
     document.getElementById('step-desc').innerHTML      = s.desc;
-    document.getElementById('step-label').textContent   = `${step + 1} / 4`;
+    document.getElementById('step-label').textContent   = `${step + 1} / 3`;
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const node = document.getElementById(`node-${i}`);
       const line = document.getElementById(`line-${i}`);
       if (!node) continue;
@@ -67,7 +65,7 @@ const App = (() => {
     document.getElementById('capture-hint').textContent = '\u9854\u3092\u67a0\u5185\u306b\u5408\u308f\u305b\u3066\u304f\u3060\u3055\u3044';
   }
 
-  // \u2500\u2500\u2500 Enable capture button \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ─── Enable capture button ────────────────────────────────────────────────────
   function enableCapture(hint) {
     if (captureInProgress) return;
     const btn  = document.getElementById('btn-capture');
@@ -84,7 +82,7 @@ const App = (() => {
     if (hint && htEl) htEl.textContent = hint;
   }
 
-  // \u2500\u2500\u2500 Live face detection callback \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ─── Live face detection callback ────────────────────────────────────────────
   function onLiveFace(kp) {
     if (kp && kp.fallback) {
       fallbackMode = true;
@@ -100,7 +98,7 @@ const App = (() => {
     }
   }
 
-  // \u2500\u2500\u2500 Capture one photo \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ─── Capture one photo ───────────────────────────────────────────────────────
   async function capturePhoto() {
     if (captureInProgress) return;
     captureInProgress = true;
@@ -127,7 +125,7 @@ const App = (() => {
       currentStep++;
       captureInProgress = false;
 
-      if (currentStep < 4) {
+      if (currentStep < 3) {
         fallbackMode = false;
         updateStepUI(currentStep);
         setTimeout(() => {
@@ -144,7 +142,7 @@ const App = (() => {
     }
   }
 
-  // \u2500\u2500\u2500 Analysis pipeline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ─── Analysis pipeline ───────────────────────────────────────────────────────
   async function runAnalysis() {
     showScreen('processing');
 
@@ -166,12 +164,10 @@ const App = (() => {
 
       setLog('log-detect', 'active');
       await sleep(300);
-      const [c0, c1, c2, c3] = captures;
+      const [c0, c1, c2] = captures;
       const neutralKP  = c0?.landmarks || null;
       const smileKP    = c1?.landmarks || null;
       const bottomKP   = c2?.landmarks || null;  // \u771f\u4e0b\u304b\u3089\u64ae\u5f71
-      const topKP      = c3?.landmarks || null;  // \u771f\u4e0a\u304b\u3089\u64ae\u5f71\uff08\u6539\u5584\u30a4\u30e1\u30fc\u30b8\uff09
-      const topImgUrl  = c3?.canvas ? c3.canvas.toDataURL('image/jpeg', 0.85) : null;
       setLog('log-detect', 'done'); setProgress(22);
 
       setLog('log-nasolabial', 'active');
@@ -210,15 +206,15 @@ const App = (() => {
       setLog('log-score', 'done'); setProgress(100);
 
       await sleep(500);
-      showResults(result, topImgUrl);
+      showResults(result);
 
     } catch (err) {
       showError('\u89e3\u6790\u30a8\u30e9\u30fc', '\u89e3\u6790\u4e2d\u306b\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f: ' + err.message);
     }
   }
 
-  function showResults(result, topImgUrl) {
-    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result, topImgUrl);
+  function showResults(result) {
+    document.getElementById('results-body').innerHTML = ReportGenerator.generate(result);
     showScreen('results');
   }
 
