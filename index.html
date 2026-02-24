@@ -11,8 +11,23 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .version-badge {
+      position: fixed;
+      top: 8px;
+      right: 10px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      font-family: monospace;
+      z-index: 9999;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+    }
+  </style>
 </head>
 <body>
+  <div class="version-badge">v1.0.4</div>
+
   <!-- Screen 1: Welcome -->
   <div id="screen-welcome" class="screen active">
     <div class="welcome-bg"></div>
