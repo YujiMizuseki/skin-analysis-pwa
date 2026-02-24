@@ -5,6 +5,8 @@ const App = (() => {
   let currentStep = 0;
   let captures = [];
   let modelReady = false;
+  let fallbackMode = false;   // true once 8s timeout fires or face detected
+  let captureInProgress = false;
 
   const STEPS = [
     { id: 'neutral', emoji: '😐', title: '正面・無表情',
@@ -62,33 +64,46 @@ const App = (() => {
     document.getElementById('capture-hint').textContent = '顔を枠内に合わせてください';
   }
 
+  // ─── Enable capture button (central function) ────────────────
+  function enableCapture(hint) {
+    if (captureInProgress) return;
+    const btn  = document.getElementById('btn-capture');
+    const htEl = document.getElementById('capture-hint');
+    btn.disabled = false;
+    if (hint && htEl) htEl.textContent = hint;
+  }
+
+  function disableCapture(hint) {
+    if (fallbackMode || captureInProgress) return; // Never disable when in fallback mode
+    const btn  = document.getElementById('btn-capture');
+    const htEl = document.getElementById('capture-hint');
+    btn.disabled = true;
+    if (hint && htEl) htEl.textContent = hint;
+  }
+
   // ─── Live face detection callback ────────────────────────────
   function onLiveFace(kp) {
-    const btn  = document.getElementById('btn-capture');
-    const hint = document.getElementById('capture-hint');
-
-    // Fallback from timeout
+    // Fallback from 8-second timeout
     if (kp && kp.fallback) {
-      btn.disabled = false;
-      hint.textContent = '⚠ 顔未検出でも撮影できます（精度低下）';
+      fallbackMode = true;
+      enableCapture('⚠ 顔未検出でも撮影できます（精度低下）');
       return;
     }
 
     if (FaceDetector.isFaceGood(kp)) {
-      btn.disabled = false;
-      // Show position hint if not ideal
+      fallbackMode = true; // Real face found — also set flag so we stay enabled
       const posHint = FaceDetector.getFaceHint ? FaceDetector.getFaceHint(kp) : null;
-      hint.textContent = posHint
-        ? `⚠ ${posHint} — 撮影可`
-        : '✓ 準備完了！ボタンを押して撮影';
+      enableCapture(posHint ? `⚠ ${posHint} — 撮影可` : '✓ 準備完了！ボタンを押して撮影');
     } else {
-      btn.disabled = true;
-      hint.textContent = '顔を枠内に合わせてください';
+      // Only disable if fallback mode hasn't kicked in yet
+      disableCapture('顔を枠内に合わせてください');
     }
   }
 
   // ─── Capture one photo ───────────────────────────────────────
   async function capturePhoto() {
+    if (captureInProgress) return;
+    captureInProgress = true;
     const btn = document.getElementById('btn-capture');
     btn.disabled = true;
 
@@ -103,7 +118,8 @@ const App = (() => {
       captures.push({ canvas, landmarks: kp || null });
 
       // Show thumbnail
-      const slot = document.getElementById(`thumb-${Math.min(currentStep, 1)}`);
+      const thumbIdx = currentStep < 2 ? currentStep : 1;
+      const slot = document.getElementById(`thumb-${thumbIdx}`);
       if (slot) {
         const img = document.createElement('img');
         img.src = canvas.toDataURL('image/jpeg', 0.7);
@@ -111,21 +127,29 @@ const App = (() => {
         slot.appendChild(img);
       }
 
-      // Flash
+      // Flash effect
       const vp = document.querySelector('.camera-viewport');
       if (vp) { vp.style.filter = 'brightness(2.5)'; setTimeout(() => { vp.style.filter = ''; }, 120); }
 
       currentStep++;
+      captureInProgress = false;
 
       if (currentStep < 3) {
+        fallbackMode = false; // Reset so next step waits for face or new timeout
         updateStepUI(currentStep);
-        // Re-enable button after short delay to avoid double-tap
-        setTimeout(() => { btn.disabled = false; }, 500);
+        // Give 600ms before re-enabling (avoid double-tap + let next frame arrive)
+        setTimeout(() => {
+          if (!captureInProgress) {
+            fallbackMode = true; // Allow capture even if face not re-confirmed
+            enableCapture('撮影ボタンを押してください');
+          }
+        }, 600);
       } else {
         Camera.stop();
         await runAnalysis();
       }
     } catch (err) {
+      captureInProgress = false;
       showError('撮影エラー', err.message);
       btn.disabled = false;
     }
@@ -213,6 +237,7 @@ const App = (() => {
   // ─── Reset ───────────────────────────────────────────────────
   function reset() {
     currentStep = 0; captures = [];
+    fallbackMode = false; captureInProgress = false;
     Camera.stop();
     showScreen('welcome');
     document.getElementById('results-body').innerHTML = '';
@@ -257,6 +282,7 @@ const App = (() => {
       }
       hideModal();
       currentStep = 0; captures = [];
+      fallbackMode = false; captureInProgress = false;
       updateStepUI(0);
       showScreen('camera');
       await Camera.start(onLiveFace);
