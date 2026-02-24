@@ -6,15 +6,15 @@ const SkinAgeScorer = (() => {
   function calculate(nasolabial, cheek, wrinkle, bone, marionette) {
     const w = {
       nasolabial: 0.15,
-      marionette: 0.12,
-      cheek:      0.15,
-      crowFeet:   0.10,
-      glabellar:  0.10,
-      eyelid:     0.08,
-      bone:       0.12,
+      marionette: 0.13,
+      cheek:      0.16,
+      crowFeet:   0.11,
+      glabellar:  0.11,
+      eyelid:     0.09,
+      bone:       0.10,
       elasticity: 0.08,
-      underEye:   0.06,
-      smile:      0.04
+      underEye:   0.04,
+      smile:      0.03
     };
 
     const mario = marionette || { score: 68, severity: genericSeverity(68), skinContrib: 80, boneContrib: 20 };
@@ -36,11 +36,11 @@ const SkinAgeScorer = (() => {
     const boneFactor = bone.boneFactor || 25;
     const skinFactor = 100 - boneFactor;
 
-    // 11 feature items — fixed display order
+    // 10 feature items — fixed display order (top → bottom of face)
     const features = [
-      // ─ Upper face ─────────────────────────────────────────────
+      // ─ 上顔面 ────────────────────────────────────────────
       {
-        key: 'glabellar', name: '眉間のシワ', icon: '🧐',
+        key: 'glabellar', name: '砉間のシワ', icon: '🧐',
         score: wrinkle.glabellarScore || 72,
         severity: glabellarSeverity(wrinkle.glabellarScore || 72),
         skinContrib: 92, boneContrib: 8
@@ -63,7 +63,7 @@ const SkinAgeScorer = (() => {
         severity: underEyeSeverity(wrinkle.underEyeScore || 70),
         skinContrib: 80, boneContrib: 20
       },
-      // ─ Mid face ────────────────────────────────────────────
+      // ─ 中顔面 ────────────────────────────────────────────
       {
         key: 'nasolabial', name: '法令線', icon: '👄',
         score: nasolabial.score || 65,
@@ -88,7 +88,7 @@ const SkinAgeScorer = (() => {
         severity: genericSeverity(wrinkle.smileWrinkleScore || 72),
         skinContrib: 90, boneContrib: 10
       },
-      // ─ Lower face ─────────────────────────────────────────
+      // ─ 下顔面 ──────────────────────────────────────────
       {
         key: 'marionette', name: 'マリオネットライン', icon: '🎭',
         score: mario.score,
@@ -100,12 +100,6 @@ const SkinAgeScorer = (() => {
         score: bone.jawScore || 68,
         severity: jawSeverity(bone.jawScore || 68),
         skinContrib: 55, boneContrib: 45
-      },
-      {
-        key: 'cheekbone', name: '頬骨・立体感', icon: '💎',
-        score: bone.cheekScore || 72,
-        severity: cheekboneSeverity(bone.cheekScore || 72),
-        skinContrib: 25, boneContrib: 75
       },
     ];
 
@@ -152,12 +146,6 @@ const SkinAgeScorer = (() => {
     if (s >= 65) return { label: '標準的',     color: '#2ecc71', level: 1 };
     if (s >= 48) return { label: 'やや丸み',   color: '#f39c12', level: 2 };
     return            { label: '輪郭ぼやけ', color: '#e67e22', level: 3 };
-  }
-  function cheekboneSeverity(s) {
-    if (s >= 80) return { label: '高い',   color: '#9b59b6', level: 0 };
-    if (s >= 65) return { label: '標準',   color: '#3498db', level: 1 };
-    if (s >= 48) return { label: 'やや低い', color: '#f39c12', level: 2 };
-    return            { label: '低め',   color: '#e67e22', level: 3 };
   }
 
   function scoreToAge(s) {
