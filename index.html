@@ -26,7 +26,7 @@
   </style>
 </head>
 <body>
-  <div class="version-badge">v1.0.4</div>
+  <div class="version-badge">v1.0.5</div>
 
   <!-- Screen 1: Welcome -->
   <div id="screen-welcome" class="screen active">
@@ -151,8 +151,8 @@
         <li id="log-model">⬜ AIモデル準備</li>
         <li id="log-detect">⬜ 顔ランドマーク検出 (3枚)</li>
         <li id="log-nasolabial">⬜ 鼻唇溝（法令線）解析</li>
-        <li id="log-cheek">⬜ 頬のたるみ解析</li>
-        <li id="log-wrinkle">⬜ シワ・目尻の検出</li>
+        <li id="log-cheek">⬜ 頬のたるみ・弾力解析</li>
+        <li id="log-wrinkle">⬜ シワ・目尻・目の下の検出</li>
         <li id="log-bone">⬜ 骨格構造の評価</li>
         <li id="log-score">⬜ 肌年齢スコア算出</li>
       </ul>
@@ -168,9 +168,7 @@
         <button id="btn-retry" class="btn-sm" title="再診断">🔄</button>
       </div>
     </div>
-    <div id="results-body" class="results-body">
-      <!-- dynamically generated -->
-    </div>
+    <div id="results-body" class="results-body"></div>
   </div>
 
   <!-- Loading Modal -->

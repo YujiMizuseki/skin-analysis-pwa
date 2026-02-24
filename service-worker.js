@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skin-ai-v4';  // bump this to force cache refresh
+const CACHE_NAME = 'skin-ai-v5';  // bump to force cache refresh
 const ASSETS = [
   './',
   './index.html',
